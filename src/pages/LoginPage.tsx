@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import logoImg from '../assets/mindcraft-logo.png'
 import { Logo } from '../components/layout/Logo'
-import { useStudent } from '../context/StudentContext'
+import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
 
 export function LoginPage() {
-  const { login, isAuthenticated } = useStudent()
+  const { login, isAuthenticated } = useAuth()
   const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const from = (location.state as { from?: string } | null)?.from ?? '/academy/dashboard'
 
@@ -21,18 +22,31 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    login(email)
+    setError('')
+    const err = login(email, password)
+    if (err) {
+      setError(t.portal.loginError)
+      return
+    }
     navigate(from, { replace: true })
   }
 
   return (
-    <div className="flex min-h-screen">
-      <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-16 xl:px-24">
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-10 lg:w-1/2 lg:px-16 xl:px-24">
         <Logo size="lg" />
-        <h1 className="mt-10 text-3xl font-bold text-slate-900">{t.portal.loginTitle}</h1>
+        <h1 className="mt-8 text-2xl font-bold text-slate-900 sm:mt-10 sm:text-3xl">
+          {t.portal.loginTitle}
+        </h1>
         <p className="mt-2 text-slate-600">{t.portal.loginSubtitle}</p>
 
-        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">{t.portal.demoCredentials}</p>
+          <p className="mt-2">{t.portal.demoStudent}</p>
+          <p className="mt-1">{t.portal.demoTeacher}</p>
+        </div>
+
+        <form className="mt-6 space-y-4 sm:mt-8 sm:space-y-5" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700">
               Email
@@ -61,6 +75,7 @@ export function LoginPage() {
               className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700"
@@ -68,19 +83,6 @@ export function LoginPage() {
             {t.portal.loginButton}
           </button>
         </form>
-
-        <p className="mt-8 text-center text-sm text-slate-500">{t.portal.orContinue}</p>
-        <div className="mt-4 flex justify-center gap-4">
-          {['G', '', 'M'].map((label, i) => (
-            <button
-              key={i}
-              type="button"
-              className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
         <p className="mt-8 text-center text-sm text-slate-600">
           {t.portal.noAccount}{' '}

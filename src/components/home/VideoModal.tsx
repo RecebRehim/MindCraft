@@ -1,9 +1,13 @@
+import { useLanguage } from '../../i18n/LanguageContext'
+
 interface VideoModalProps {
   open: boolean
   onClose: () => void
 }
 
 export function VideoModal({ open, onClose }: VideoModalProps) {
+  const { t } = useLanguage()
+
   if (!open) return null
 
   return (
@@ -21,15 +25,15 @@ export function VideoModal({ open, onClose }: VideoModalProps) {
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30"
-          aria-label="Close"
+          aria-label={t.videoModal.close}
         >
           ✕
         </button>
-        <div className="aspect-video w-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-          <div className="text-center text-white">
+        <div className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+          <div className="px-4 text-center text-white">
             <p className="text-5xl">▶</p>
-            <p className="mt-4 text-lg font-semibold">Mindcraft Academy Intro</p>
-            <p className="mt-2 text-sm text-slate-400">Video tezliklə əlavə olunacaq</p>
+            <p className="mt-4 text-lg font-semibold">{t.videoModal.title}</p>
+            <p className="mt-2 text-sm text-slate-400">{t.videoModal.comingSoon}</p>
           </div>
         </div>
       </div>

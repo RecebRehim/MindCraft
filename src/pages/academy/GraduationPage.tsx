@@ -1,11 +1,11 @@
 import { AcademyPageShell } from '../../components/academy/AcademyPageShell'
 import { LuxCard } from '../../components/academy/LuxCard'
-import { useStudent } from '../../context/StudentContext'
+import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../i18n/LanguageContext'
 import logoImg from '../../assets/mindcraft-logo.png'
 
 export function AcademyGraduationPage() {
-  const { student } = useStudent()
+  const { user: student } = useAuth()
   const { t } = useLanguage()
   const g = t.portal.graduation
 

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { Logo } from './Logo'
@@ -10,20 +11,26 @@ interface MainNavProps {
 export function MainNav({ dark = false, onApplyClick }: MainNavProps) {
   const { pathname } = useLocation()
   const { lang, setLang, t } = useLanguage()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const links = [
-    { to: '/', label: 'Home', hash: '' },
+    { to: '/', label: t.navPublic.home, hash: '' },
     { to: '/#courses', label: t.nav.courses, hash: 'courses' },
-    { to: '/academy/dashboard', label: 'Academy', hash: '' },
+    { to: '/academy/dashboard', label: t.navPublic.academy, hash: '' },
     { to: '/#about', label: t.nav.about, hash: 'about' },
-    { to: '/events', label: 'Contact', hash: '' },
+    { to: '/events', label: t.navPublic.contact, hash: '' },
   ]
 
-  const isActive = (hash: string, to: string) => {
-    if (hash && pathname === '/') return false
-    if (to === '/' && pathname === '/') return true
-    return pathname === to.replace('/#courses', '').replace('/#about', '') && !hash
-  }
+  const linkClass = (active: boolean) =>
+    `block py-2 text-sm font-medium transition-colors lg:inline lg:py-0 ${
+      active
+        ? dark
+          ? 'text-blue-400'
+          : 'text-blue-600'
+        : dark
+          ? 'text-slate-300 hover:text-white'
+          : 'text-slate-600 hover:text-blue-600'
+    }`
 
   return (
     <header
@@ -31,7 +38,7 @@ export function MainNav({ dark = false, onApplyClick }: MainNavProps) {
         dark ? 'border-white/10 bg-slate-950/90' : 'border-slate-200/60 bg-white/85'
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Logo size="sm" />
 
         <nav className="hidden items-center gap-6 lg:flex">
@@ -39,27 +46,23 @@ export function MainNav({ dark = false, onApplyClick }: MainNavProps) {
             <Link
               key={to}
               to={to}
-              className={`text-sm font-medium transition-colors ${
-                isActive(hash, to)
-                  ? dark
-                    ? 'text-blue-400'
-                    : 'text-blue-600'
-                  : dark
-                    ? 'text-slate-300 hover:text-white'
-                    : 'text-slate-600 hover:text-blue-600'
-              }`}
+              className={linkClass(pathname === '/' && hash === '' && to === '/')}
             >
               {label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs font-semibold">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div
+            className="flex w-[4.75rem] shrink-0 rounded-lg border border-slate-200 p-0.5 text-xs font-semibold"
+            role="group"
+            aria-label="Language"
+          >
             <button
               type="button"
               onClick={() => setLang('en')}
-              className={`rounded-md px-2.5 py-1 transition-colors ${
+              className={`w-1/2 rounded-md py-1 transition-colors ${
                 lang === 'en' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -68,7 +71,7 @@ export function MainNav({ dark = false, onApplyClick }: MainNavProps) {
             <button
               type="button"
               onClick={() => setLang('az')}
-              className={`rounded-md px-2.5 py-1 transition-colors ${
+              className={`w-1/2 rounded-md py-1 transition-colors ${
                 lang === 'az' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -80,20 +83,64 @@ export function MainNav({ dark = false, onApplyClick }: MainNavProps) {
             <button
               type="button"
               onClick={onApplyClick}
-              className="hidden rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition hover:bg-blue-700 sm:inline-flex"
+              className="hidden rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition hover:bg-blue-700 sm:inline-flex lg:px-5 lg:py-2.5"
             >
               {t.nav.apply}
             </button>
           ) : (
             <Link
               to="/login"
-              className="hidden rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition hover:bg-blue-700 sm:inline-flex"
+              className="hidden rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)] transition hover:bg-blue-700 sm:inline-flex lg:px-5 lg:py-2.5"
             >
               {t.nav.apply}
             </Link>
           )}
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 lg:hidden"
+            aria-label="Menu"
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
         </div>
       </div>
+
+      {menuOpen && (
+        <nav className="border-t border-slate-100 bg-white px-4 py-4 lg:hidden">
+          {links.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMenuOpen(false)}
+              className={linkClass(false)}
+            >
+              {label}
+            </Link>
+          ))}
+          {onApplyClick ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false)
+                onApplyClick()
+              }}
+              className="mt-3 w-full rounded-full bg-blue-600 py-2.5 text-sm font-semibold text-white"
+            >
+              {t.nav.apply}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="mt-3 block w-full rounded-full bg-blue-600 py-2.5 text-center text-sm font-semibold text-white"
+            >
+              {t.nav.apply}
+            </Link>
+          )}
+        </nav>
+      )}
     </header>
   )
 }

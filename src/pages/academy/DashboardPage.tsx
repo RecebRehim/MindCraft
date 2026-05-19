@@ -1,88 +1,156 @@
 import { Link } from 'react-router-dom'
+import { getGroupName } from '../../data/credentials'
 import { AcademyPageShell } from '../../components/academy/AcademyPageShell'
 import { LuxCard } from '../../components/academy/LuxCard'
-import { HexBadge } from '../../components/ui/HexBadge'
-import { ProgressRing } from '../../components/ui/ProgressRing'
-import { useStudent } from '../../context/StudentContext'
+import { useAcademyData } from '../../context/AcademyDataContext'
+import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../i18n/LanguageContext'
 
-const recentActivity = [
-  { text: 'Completed Python Module 3', time: '2h ago' },
-  { text: 'Earned "Fast Learner" badge', time: '5h ago' },
-  { text: 'Joined AI Workshop', time: '1d ago' },
-]
-
-const upcoming = [
-  { title: 'Machine Learning Basics', time: 'Today, 3:00 PM' },
-  { title: 'Robotics Lab Session', time: 'Tomorrow, 10:00 AM' },
-  { title: 'Career Q&A with Mentor', time: 'Fri, 2:00 PM' },
-]
-
 export function AcademyDashboardPage() {
-  const { student } = useStudent()
+  const { user } = useAuth()
+  const { assignments, submissions, announcements, materials, attendance } = useAcademyData()
   const { t } = useLanguage()
   const d = t.portal.dashboard
 
+  if (!user) return null
+
+  const groupId = user.groupId
+  const isTeacher = user.role === 'teacher'
+
+  const groupAssignments = assignments.filter((a) => a.groupId === groupId)
+  const groupAnnouncements = announcements
+    .filter((a) => a.groupId === groupId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 5)
+
+  const unreadCount = announcements.filter(
+    (a) => a.groupId === groupId && !a.readBy.includes(user.id),
+  ).length
+
+  const pendingSubmissions = isTeacher
+    ? submissions.filter(
+        (s) =>
+          groupAssignments.some((a) => a.id === s.assignmentId) && s.grade === null,
+      ).length
+    : groupAssignments.filter((a) => {
+        const sub = submissions.find((s) => s.assignmentId === a.id && s.studentId === user.id)
+        return !sub || sub.grade === null
+      }).length
+
+  const quickLinks = isTeacher
+    ? [
+        { to: '/academy/assignments', label: d.linkAssignments, count: pendingSubmissions },
+        { to: '/academy/attendance', label: d.linkAttendance, count: attendance.filter((s) => s.groupId === groupId).length },
+        { to: '/academy/materials', label: d.linkMaterials, count: materials.filter((m) => m.groupId === groupId).length },
+        { to: '/academy/notifications', label: d.linkNotifications, count: unreadCount },
+      ]
+    : [
+        { to: '/academy/assignments', label: d.linkAssignments, count: pendingSubmissions },
+        { to: '/academy/grades', label: d.linkGrades, count: null },
+        { to: '/academy/materials', label: d.linkMaterials, count: materials.filter((m) => m.groupId === groupId).length },
+        { to: '/academy/attendance', label: d.linkAttendance, count: null },
+      ]
+
   return (
     <AcademyPageShell>
-      <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-        {d.welcome}, {student?.firstName}! <span aria-hidden>👋</span>
-      </h1>
-
-      <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-6 lg:grid-cols-3">
-        <LuxCard className="lg:col-span-1">
-          <h2 className="font-bold text-slate-900">{d.continueLearning}</h2>
-          <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-            <ProgressRing percent={75} size={100} stroke={10} />
-            <div className="text-center sm:text-left">
-              <p className="font-semibold text-slate-900">Python for Beginners</p>
-              <p className="mt-1 text-sm text-slate-500">Module 4 of 8</p>
-              <Link
-                to="/academy/courses"
-                className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700"
-              >
-                {d.continue} →
-              </Link>
-            </div>
-          </div>
-        </LuxCard>
-
-        <LuxCard>
-          <h2 className="font-bold text-slate-900">{d.recentActivity}</h2>
-          <ul className="mt-4 space-y-3">
-            {recentActivity.map((item) => (
-              <li
-                key={item.text}
-                className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 text-sm last:border-0 sm:flex-row sm:justify-between sm:gap-4"
-              >
-                <span className="text-slate-700">{item.text}</span>
-                <span className="shrink-0 text-slate-400">{item.time}</span>
-              </li>
-            ))}
-          </ul>
-        </LuxCard>
-
-        <LuxCard>
-          <h2 className="font-bold text-slate-900">{d.upcomingClasses}</h2>
-          <ul className="mt-4 space-y-3">
-            {upcoming.map((item) => (
-              <li key={item.title} className="rounded-xl bg-slate-50/80 p-3 text-sm">
-                <p className="font-medium text-slate-900">{item.title}</p>
-                <p className="mt-0.5 text-slate-500">{item.time}</p>
-              </li>
-            ))}
-          </ul>
-        </LuxCard>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+          {d.welcome}, {user.firstName}!
+        </h1>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
+          {getGroupName(groupId)}
+        </span>
       </div>
 
-      <section className="mt-6 sm:mt-8">
-        <h2 className="font-bold text-slate-900">{d.achievements}</h2>
-        <div className="mt-4 flex flex-wrap gap-3 sm:gap-4">
-          {['🏅', '⭐', '🎯', '💎', '🔥'].map((icon, i) => (
-            <HexBadge key={i} icon={icon} index={i} size="lg" />
-          ))}
-        </div>
-      </section>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:mt-8">
+        {quickLinks.map((link) => (
+          <Link key={link.to} to={link.to}>
+            <LuxCard className="h-full transition hover:border-blue-200 hover:shadow-md">
+              <p className="text-sm font-medium text-slate-500">{link.label}</p>
+              {link.count != null && (
+                <p className="mt-2 text-2xl font-bold text-slate-900">{link.count}</p>
+              )}
+              <p className="mt-2 text-xs font-semibold text-blue-600">{d.open} →</p>
+            </LuxCard>
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-2">
+        <LuxCard>
+          <h2 className="font-bold text-slate-900">{d.recentAnnouncements}</h2>
+          {groupAnnouncements.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-500">{d.noAnnouncements}</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {groupAnnouncements.map((item) => (
+                <li key={item.id} className="border-b border-slate-100 pb-3 last:border-0">
+                  <p className="font-medium text-slate-900">{item.title}</p>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">{item.body}</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link
+            to="/academy/notifications"
+            className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            {d.viewAll} →
+          </Link>
+        </LuxCard>
+
+        <LuxCard>
+          <h2 className="font-bold text-slate-900">
+            {isTeacher ? d.teacherOverview : d.studentOverview}
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm text-slate-700">
+            {isTeacher ? (
+              <>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.activeAssignments}</span>
+                  <span className="font-semibold">{groupAssignments.length}</span>
+                </li>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.pendingGrading}</span>
+                  <span className="font-semibold">{pendingSubmissions}</span>
+                </li>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.lessonsRecorded}</span>
+                  <span className="font-semibold">
+                    {attendance.filter((s) => s.groupId === groupId).length}
+                  </span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.openAssignments}</span>
+                  <span className="font-semibold">{pendingSubmissions}</span>
+                </li>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.materialsAvailable}</span>
+                  <span className="font-semibold">
+                    {materials.filter((m) => m.groupId === groupId).length}
+                  </span>
+                </li>
+                <li className="flex justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span>{d.unreadNotifications}</span>
+                  <span className="font-semibold">{unreadCount}</span>
+                </li>
+              </>
+            )}
+          </ul>
+          <Link
+            to="/academy/messages"
+            className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            {d.goToMessages} →
+          </Link>
+        </LuxCard>
+      </div>
     </AcademyPageShell>
   )
 }
