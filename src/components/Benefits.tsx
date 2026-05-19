@@ -6,7 +6,7 @@ export function Benefits() {
   const { t } = useLanguage()
 
   return (
-    <section id="about" className="bg-white py-16 sm:py-20">
+    <section id="about" className="scroll-mt-20 bg-slate-50/80 py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           {t.benefits.title}

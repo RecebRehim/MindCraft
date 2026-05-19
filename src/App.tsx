@@ -1,61 +1,60 @@
-import { useCallback, useRef, useState } from 'react'
-import { Benefits } from './components/Benefits'
-import { CareerQuiz } from './components/CareerQuiz'
-import { Courses } from './components/Courses'
-import { Footer } from './components/Footer'
-import { Header } from './components/Header'
-import { Hero } from './components/Hero'
-import { SignupForm } from './components/SignupForm'
-import { LanguageProvider, useLanguage } from './i18n/LanguageContext'
-import type { CourseId } from './types'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { StudentProvider } from './context/StudentContext'
+import { LanguageProvider } from './i18n/LanguageContext'
+import { AcademyLayout } from './layouts/AcademyLayout'
+import { AcademyAIMentorPage } from './pages/academy/AIMentorPage'
+import { AcademyCoursesPage } from './pages/academy/CoursesPage'
+import { AcademyDashboardPage } from './pages/academy/DashboardPage'
+import { AcademyGraduationPage } from './pages/academy/GraduationPage'
+import { AcademyLabsPage } from './pages/academy/LabsPage'
+import { AcademyProfilePage } from './pages/academy/ProfilePage'
+import { AcademySkillsPage } from './pages/academy/SkillsPage'
+import { EventsPage } from './pages/EventsPage'
+import { HomePage } from './pages/HomePage'
+import { LoginPage } from './pages/LoginPage'
+import { MentorsPage } from './pages/MentorsPage'
 
-function AppContent() {
-  const { t } = useLanguage()
-  const signupRef = useRef<HTMLElement>(null)
-  const [selectedCourse, setSelectedCourse] = useState<CourseId | ''>('')
-
-  const scrollToSignup = useCallback((courseId: CourseId | '' = '') => {
-    setSelectedCourse(courseId)
-    signupRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  const scrollToQuiz = useCallback(() => {
-    document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
-
-  return (
-    <div className="min-h-screen bg-white">
-      <Header onApplyClick={() => scrollToSignup()} />
-      <main>
-        <Hero onApplyClick={() => scrollToSignup()} onQuizClick={scrollToQuiz} />
-        <Courses onApply={(id) => scrollToSignup(id)} />
-        <Benefits />
-        <CareerQuiz onApply={(id) => scrollToSignup(id)} />
-        <section
-          id="apply"
-          ref={signupRef}
-          className="bg-slate-50/80 py-16 sm:py-20"
-        >
-          <div className="mx-auto max-w-lg px-4 sm:px-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-slate-900">{t.signup.title}</h2>
-              <p className="mt-2 text-slate-600">{t.signup.subtitle}</p>
-            </div>
-            <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <SignupForm preselectedCourse={selectedCourse} />
-            </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
-  )
+function AcademyRedirect({ to }: { to: string }) {
+  return <Navigate to={to} replace />
 }
 
 export default function App() {
   return (
     <LanguageProvider>
-      <AppContent />
+      <StudentProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public website */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/mentors" element={<MentorsPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Student portal — single layout, sidebar stays fixed */}
+            <Route path="/academy" element={<AcademyLayout />}>
+              <Route index element={<Navigate to="/academy/dashboard" replace />} />
+              <Route path="dashboard" element={<AcademyDashboardPage />} />
+              <Route path="profile" element={<AcademyProfilePage />} />
+              <Route path="courses" element={<AcademyCoursesPage />} />
+              <Route path="skills" element={<AcademySkillsPage />} />
+              <Route path="ai-mentor" element={<AcademyAIMentorPage />} />
+              <Route path="labs" element={<AcademyLabsPage />} />
+              <Route path="graduation" element={<AcademyGraduationPage />} />
+            </Route>
+
+            {/* Legacy URLs → academy panel */}
+            <Route path="/dashboard" element={<AcademyRedirect to="/academy/dashboard" />} />
+            <Route path="/profile" element={<AcademyRedirect to="/academy/profile" />} />
+            <Route path="/galaxy" element={<AcademyRedirect to="/academy/courses" />} />
+            <Route path="/skill-tree" element={<AcademyRedirect to="/academy/skills" />} />
+            <Route path="/ai-mentor" element={<AcademyRedirect to="/academy/ai-mentor" />} />
+            <Route path="/labs" element={<AcademyRedirect to="/academy/labs" />} />
+            <Route path="/graduation" element={<AcademyRedirect to="/academy/graduation" />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </StudentProvider>
     </LanguageProvider>
   )
 }
